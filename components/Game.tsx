@@ -8,16 +8,11 @@ import { POWERUP, LEVEL_WAVES } from '@/game/constants';
 // ─── Level select data ────────────────────────────────────────────────────────
 
 const LEVEL_INFO = [
-  { level: 1,  env: 'DEEP SPACE',     icon: '🚀', color: '#4488FF' },
-  { level: 2,  env: 'DEEP SPACE',     icon: '🚀', color: '#4488FF' },
-  { level: 3,  env: 'ANCIENT FOREST', icon: '🌿', color: '#44CC44' },
-  { level: 4,  env: 'ANCIENT FOREST', icon: '🌿', color: '#44CC44' },
-  { level: 5,  env: 'NEON CITY',      icon: '🏙️', color: '#CC88FF' },
-  { level: 6,  env: 'NEON CITY',      icon: '🏙️', color: '#CC88FF' },
-  { level: 7,  env: 'DEEP OCEAN',     icon: '🌊', color: '#44AAFF' },
-  { level: 8,  env: 'DEEP OCEAN',     icon: '🌊', color: '#44AAFF' },
-  { level: 9,  env: 'INFERNO CORE',   icon: '🔥', color: '#FF6600' },
-  { level: 10, env: 'INFERNO CORE',   icon: '🔥', color: '#FF6600' },
+  { level: 1, env: 'DEEP SPACE',     icon: '🚀', color: '#4488FF' },
+  { level: 2, env: 'ANCIENT FOREST', icon: '🌿', color: '#44CC44' },
+  { level: 3, env: 'NEON CITY',      icon: '🏙️', color: '#CC88FF' },
+  { level: 4, env: 'DEEP OCEAN',     icon: '🌊', color: '#44AAFF' },
+  { level: 5, env: 'INFERNO CORE',   icon: '🔥', color: '#FF6600' },
 ];
 
 // ─── HUD ─────────────────────────────────────────────────────────────────────
@@ -408,7 +403,7 @@ function VictoryScreen({
           VICTORY!
         </h1>
         <p className="text-cyan-400 font-mono text-lg mb-1">The docs are protected. 🦉</p>
-        <p className="text-gray-500 font-mono text-sm mb-6">All 10 levels complete!</p>
+        <p className="text-gray-500 font-mono text-sm mb-6">All 5 levels complete!</p>
 
         {isNewHighScore && (
           <div

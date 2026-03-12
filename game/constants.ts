@@ -94,7 +94,7 @@ export const POWERUP = {
 } as const;
 
 export const DIFFICULTY = {
-  MAX_LEVEL: 10,
+  MAX_LEVEL: 5,
   MAX_ENEMIES: 16,
   SPEED_MULT_PER_LEVEL: 0.10,
   WAVE_SPAWN_INTERVAL: 0.55,   // seconds between individual enemy spawns in a wave
@@ -157,10 +157,10 @@ export const ENVIRONMENTS: Record<EnvKey, {
 };
 
 export function getEnvironment(level: number): EnvKey {
-  if (level <= 2) return 'space';
-  if (level <= 4) return 'forest';
-  if (level <= 6) return 'city';
-  if (level <= 8) return 'ocean';
+  if (level <= 1) return 'space';
+  if (level <= 2) return 'forest';
+  if (level <= 3) return 'city';
+  if (level <= 4) return 'ocean';
   return 'inferno';
 }
 
@@ -170,67 +170,33 @@ type WaveEntry = { type: string; count: number };
 
 // LEVEL_WAVES[level-1][waveIndex] = array of WaveEntry
 export const LEVEL_WAVES: WaveEntry[][][] = [
-  // ── Level 1 · Space ──────────────────────────────────────────────────────
-  [
-    [{ type: 'meteor404', count: 5 }, { type: 'warningTriangle', count: 3 }],
-    [{ type: 'meteor404', count: 6 }, { type: 'warningTriangle', count: 4 }, { type: 'bugSwarm', count: 3 }],
-    [{ type: 'meteor404', count: 7 }, { type: 'warningTriangle', count: 4 }, { type: 'bugSwarm', count: 4 }],
-  ],
-  // ── Level 2 · Space ──────────────────────────────────────────────────────
+  // ── Level 1 · Deep Space ─────────────────────────────────────────────────
   [
     [{ type: 'meteor404', count: 6 }, { type: 'bugSwarm', count: 4 }],
     [{ type: 'bugSwarm', count: 6 }, { type: 'warningTriangle', count: 4 }, { type: 'undefinedBlob', count: 2 }],
     [{ type: 'meteor404', count: 6 }, { type: 'bugSwarm', count: 5 }, { type: 'undefinedBlob', count: 3 }],
   ],
-  // ── Level 3 · Forest ─────────────────────────────────────────────────────
-  [
-    [{ type: 'bugSwarm', count: 6 }, { type: 'undefinedBlob', count: 4 }],
-    [{ type: 'bugSwarm', count: 6 }, { type: 'undefinedBlob', count: 5 }, { type: 'warningTriangle', count: 3 }],
-    [{ type: 'undefinedBlob', count: 5 }, { type: 'bugSwarm', count: 5 }, { type: 'warningTriangle', count: 4 }, { type: 'buildBot', count: 2 }],
-  ],
-  // ── Level 4 · Forest ─────────────────────────────────────────────────────
+  // ── Level 2 · Ancient Forest ─────────────────────────────────────────────
   [
     [{ type: 'undefinedBlob', count: 6 }, { type: 'buildBot', count: 4 }],
     [{ type: 'buildBot', count: 5 }, { type: 'bugSwarm', count: 6 }, { type: 'glitchCube', count: 3 }],
     [{ type: 'buildBot', count: 5 }, { type: 'undefinedBlob', count: 5 }, { type: 'glitchCube', count: 5 }],
   ],
-  // ── Level 5 · City ────────────────────────────────────────────────────────
-  [
-    [{ type: 'buildBot', count: 6 }, { type: 'glitchCube', count: 5 }],
-    [{ type: 'glitchCube', count: 7 }, { type: 'buildBot', count: 4 }, { type: 'undefinedBlob', count: 3 }],
-    [{ type: 'buildBot', count: 6 }, { type: 'glitchCube', count: 5 }, { type: 'undefinedBlob', count: 4 }],
-    [{ type: 'buildBot', count: 3 }, { type: 'glitchCube', count: 3 }, { type: 'undefinedBlob', count: 3 }, { type: 'bugSwarm', count: 4 }, { type: 'warningTriangle', count: 3 }],
-  ],
-  // ── Level 6 · City ────────────────────────────────────────────────────────
+  // ── Level 3 · Neon City ──────────────────────────────────────────────────
   [
     [{ type: 'buildBot', count: 7 }, { type: 'warningTriangle', count: 5 }, { type: 'glitchCube', count: 3 }],
     [{ type: 'glitchCube', count: 8 }, { type: 'undefinedBlob', count: 5 }],
     [{ type: 'bugSwarm', count: 9 }, { type: 'buildBot', count: 5 }, { type: 'warningTriangle', count: 3 }],
     [{ type: 'buildBot', count: 6 }, { type: 'glitchCube', count: 6 }, { type: 'undefinedBlob', count: 4 }],
   ],
-  // ── Level 7 · Ocean ──────────────────────────────────────────────────────
-  [
-    [{ type: 'undefinedBlob', count: 8 }, { type: 'bugSwarm', count: 5 }],
-    [{ type: 'glitchCube', count: 8 }, { type: 'buildBot', count: 5 }, { type: 'warningTriangle', count: 3 }],
-    [{ type: 'warningTriangle', count: 10 }, { type: 'glitchCube', count: 5 }, { type: 'buildBot', count: 4 }],
-    [{ type: 'buildBot', count: 7 }, { type: 'glitchCube', count: 6 }, { type: 'undefinedBlob', count: 5 }],
-  ],
-  // ── Level 8 · Ocean ──────────────────────────────────────────────────────
+  // ── Level 4 · Deep Ocean ─────────────────────────────────────────────────
   [
     [{ type: 'bugSwarm', count: 9 }, { type: 'undefinedBlob', count: 6 }, { type: 'buildBot', count: 4 }],
     [{ type: 'glitchCube', count: 8 }, { type: 'buildBot', count: 7 }],
     [{ type: 'warningTriangle', count: 10 }, { type: 'buildBot', count: 6 }, { type: 'glitchCube', count: 5 }],
     [{ type: 'buildBot', count: 7 }, { type: 'glitchCube', count: 7 }, { type: 'undefinedBlob', count: 5 }, { type: 'warningTriangle', count: 3 }],
   ],
-  // ── Level 9 · Inferno ────────────────────────────────────────────────────
-  [
-    [{ type: 'meteor404', count: 9 }, { type: 'buildBot', count: 7 }, { type: 'glitchCube', count: 5 }],
-    [{ type: 'glitchCube', count: 10 }, { type: 'undefinedBlob', count: 6 }, { type: 'buildBot', count: 4 }],
-    [{ type: 'bugSwarm', count: 12 }, { type: 'warningTriangle', count: 7 }, { type: 'buildBot', count: 6 }],
-    [{ type: 'buildBot', count: 8 }, { type: 'glitchCube', count: 8 }, { type: 'undefinedBlob', count: 5 }],
-    [{ type: 'buildBot', count: 5 }, { type: 'glitchCube', count: 5 }, { type: 'undefinedBlob', count: 5 }, { type: 'warningTriangle', count: 5 }, { type: 'bugSwarm', count: 4 }],
-  ],
-  // ── Level 10 · Inferno ───────────────────────────────────────────────────
+  // ── Level 5 · Inferno Core ───────────────────────────────────────────────
   [
     [{ type: 'meteor404', count: 12 }, { type: 'buildBot', count: 8 }, { type: 'glitchCube', count: 6 }],
     [{ type: 'glitchCube', count: 10 }, { type: 'undefinedBlob', count: 8 }, { type: 'buildBot', count: 6 }],
