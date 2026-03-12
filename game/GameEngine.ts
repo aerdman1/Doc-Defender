@@ -86,6 +86,11 @@ export class GameEngine {
   private bannerSubtext = '';
   private bannerTimer = 0;
 
+  // Mouse shooting
+  private mouseHeld = false;
+  private onMouseDown = (e: MouseEvent) => { if (e.button === 0) this.mouseHeld = true; };
+  private onMouseUp   = (e: MouseEvent) => { if (e.button === 0) this.mouseHeld = false; };
+
   // Track last reported power-up so we can notify React when it expires
   private lastReportedPowerUp: PowerUpType | null = null;
 
@@ -111,6 +116,9 @@ export class GameEngine {
     this.initStars();
     this.lastTime = performance.now();
     this.rafId = requestAnimationFrame(this.loop);
+
+    canvas.addEventListener('mousedown', this.onMouseDown);
+    window.addEventListener('mouseup', this.onMouseUp);
   }
 
   // ─── Game loop ──────────────────────────────────────────────────────────────
@@ -167,7 +175,7 @@ export class GameEngine {
       this.callbacks.onPowerUpChange(this.player.activePowerUp, this.player.powerUpExpiresAt);
     }
 
-    const wantShoot = this.godMode || shooting; // god mode auto-fires
+    const wantShoot = this.godMode || shooting || this.mouseHeld;
     if (wantShoot) {
       const canFire = this.player.tryShoot(now, this.godMode);
       if (canFire) {
@@ -894,11 +902,11 @@ export class GameEngine {
 
   // ─── Public API ─────────────────────────────────────────────────────────────
 
-  startGame(now: number, godMode = false) {
+  startGame(now: number, godMode = false, startLevel = 1) {
     this.godMode = godMode;
     this.activeGuns = { ...DEFAULT_GUNS };
     this.score = 0;
-    this.level = 1;
+    this.level = startLevel;
     this.combo = 0;
     this.multiplier = 1;
     this.powerUpTimer = 20;
@@ -911,13 +919,13 @@ export class GameEngine {
     this.waveIndex = 0;
     this.waveQueue = [];
     this.waveState = 'transitioning';
-    this.waveTransitionTimer = 1.2; // short delay before first wave
+    this.waveTransitionTimer = 1.2;
     this.bannerText = 'WAVE 1';
-    this.bannerSubtext = `of ${LEVEL_WAVES[0].length}`;
+    this.bannerSubtext = `of ${LEVEL_WAVES[startLevel - 1].length}`;
     this.bannerTimer = 1.2;
 
     // Environment
-    this.envId = getEnvironment(1);
+    this.envId = getEnvironment(startLevel);
     this.initEnvParticles();
 
     this.player = new Player(this.canvas.width, this.canvas.height);
@@ -925,7 +933,7 @@ export class GameEngine {
     this.callbacks.onPhaseChange('playing');
     this.callbacks.onScoreChange(0);
     this.callbacks.onLivesChange(PLAYER.LIVES);
-    this.callbacks.onLevelChange(1);
+    this.callbacks.onLevelChange(startLevel);
     this.callbacks.onMultiplierChange(1);
     this.callbacks.onPowerUpChange(null, 0);
   }
@@ -959,9 +967,16 @@ export class GameEngine {
     this.initEnvParticles();
   }
 
+  exitToMenu() {
+    this.phase = 'idle';
+    this.callbacks.onPhaseChange('idle');
+  }
+
   destroy() {
     cancelAnimationFrame(this.rafId);
     this.input.destroy();
+    this.canvas.removeEventListener('mousedown', this.onMouseDown);
+    window.removeEventListener('mouseup', this.onMouseUp);
   }
 }
 

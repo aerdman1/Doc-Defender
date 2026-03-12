@@ -3,7 +3,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { GameEngine } from '@/game/GameEngine';
 import { GamePhase, PowerUpType, ActiveGuns, DEFAULT_GUNS } from '@/game/types';
-import { POWERUP } from '@/game/constants';
+import { POWERUP, LEVEL_WAVES } from '@/game/constants';
+
+// ─── Level select data ────────────────────────────────────────────────────────
+
+const LEVEL_INFO = [
+  { level: 1,  env: 'DEEP SPACE',     icon: '🚀', color: '#4488FF' },
+  { level: 2,  env: 'DEEP SPACE',     icon: '🚀', color: '#4488FF' },
+  { level: 3,  env: 'ANCIENT FOREST', icon: '🌿', color: '#44CC44' },
+  { level: 4,  env: 'ANCIENT FOREST', icon: '🌿', color: '#44CC44' },
+  { level: 5,  env: 'NEON CITY',      icon: '🏙️', color: '#CC88FF' },
+  { level: 6,  env: 'NEON CITY',      icon: '🏙️', color: '#CC88FF' },
+  { level: 7,  env: 'DEEP OCEAN',     icon: '🌊', color: '#44AAFF' },
+  { level: 8,  env: 'DEEP OCEAN',     icon: '🌊', color: '#44AAFF' },
+  { level: 9,  env: 'INFERNO CORE',   icon: '🔥', color: '#FF6600' },
+  { level: 10, env: 'INFERNO CORE',   icon: '🔥', color: '#FF6600' },
+];
 
 // ─── HUD ─────────────────────────────────────────────────────────────────────
 
@@ -75,7 +90,7 @@ function HUD({
         </div>
       )}
 
-      {/* Multiplier badge (below score when active) */}
+      {/* Multiplier badge */}
       {multiplier > 1 && (
         <div className="absolute top-16 left-4">
           <div
@@ -145,63 +160,73 @@ function HUD({
 
 // ─── Start screen ─────────────────────────────────────────────────────────────
 
-function StartScreen({ highScore, onStart, onGodMode }: { highScore: number; onStart: () => void; onGodMode: () => void }) {
+function StartScreen({
+  highScore, selectedLevel, onSelectLevel, onStart, onGodMode
+}: {
+  highScore: number;
+  selectedLevel: number;
+  onSelectLevel: (level: number) => void;
+  onStart: () => void;
+  onGodMode: () => void;
+}) {
+  const info = LEVEL_INFO[selectedLevel - 1];
+
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/75 backdrop-blur-sm select-none">
-      <div className="text-center px-6 max-w-md">
-        {/* README logo */}
+    <div
+      className="absolute inset-0 flex items-stretch bg-black/75 backdrop-blur-sm select-none"
+      onClick={e => e.stopPropagation()}
+    >
+      {/* ── Left: main content ── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/readme-white.svg" alt="ReadMe" className="h-8 mx-auto mb-4 opacity-80" />
-
-        {/* Owlbert */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/owlbert.png" alt="Owlbert" className="h-36 mx-auto mb-3 drop-shadow-[0_0_20px_rgba(100,180,255,0.6)]" />
+        <img src="/owlbert.png" alt="Owlbert" className="h-32 mx-auto mb-3 drop-shadow-[0_0_20px_rgba(100,180,255,0.6)]" />
 
         <h1
-          className="text-5xl font-black tracking-widest text-amber-400 font-mono mb-2"
+          className="text-4xl font-black tracking-widest text-amber-400 font-mono mb-1"
           style={{ textShadow: '0 0 20px #D4A620, 0 0 40px #D4A62055' }}
         >
           OWL DEFENDER
         </h1>
-        <p className="text-cyan-400 font-mono text-base mb-1">
-          Protect the Docs. Destroy the Bugs.
-        </p>
-        <p className="text-gray-500 font-mono text-xs mb-6">
-          A ReadMe Arcade Experience
-        </p>
+        <p className="text-cyan-400 font-mono text-sm mb-1">Protect the Docs. Destroy the Bugs.</p>
+        <p className="text-gray-500 font-mono text-xs mb-4">A ReadMe Arcade Experience</p>
 
         {highScore > 0 && (
-          <div className="mb-5 py-2 px-4 rounded border border-yellow-700/40 bg-yellow-900/10">
-            <span className="text-yellow-300 font-mono text-sm">
-              ⭐ HIGH SCORE: {highScore.toLocaleString()}
-            </span>
+          <div className="mb-4 py-1.5 px-4 rounded border border-yellow-700/40 bg-yellow-900/10">
+            <span className="text-yellow-300 font-mono text-xs">⭐ HIGH SCORE: {highScore.toLocaleString()}</span>
           </div>
         )}
 
         {/* Controls */}
-        <div className="text-gray-400 font-mono text-xs mb-7 space-y-1">
-          <div className="flex justify-center gap-6">
-            <span>← → / A D — Move</span>
-            <span>SPACE — Shoot</span>
-          </div>
-          <div className="flex justify-center gap-6">
-            <span>ESC — Pause</span>
-            <span>Collect power-ups!</span>
-          </div>
+        <div className="text-gray-400 font-mono text-xs mb-5 space-y-1 text-center">
+          <div>← → ↑ ↓ / WASD — Move &nbsp;·&nbsp; SHIFT — Sprint</div>
+          <div>SPACE / click — Shoot &nbsp;·&nbsp; ESC — Pause</div>
         </div>
 
-        <div className="flex flex-col gap-3 items-center">
+        {/* Starting level indicator */}
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-gray-500 font-mono text-xs">STARTING AT:</span>
+          <span
+            className="font-black font-mono text-sm px-2 py-0.5 rounded"
+            style={{ background: `${info.color}22`, border: `1px solid ${info.color}88`, color: info.color }}
+          >
+            {info.icon} LEVEL {selectedLevel} · {info.env}
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-2 items-center w-full max-w-xs">
           <button
             onClick={onStart}
-            className="bg-amber-400 hover:bg-amber-300 text-black font-black font-mono
-                       px-10 py-3 text-xl tracking-widest rounded transition-all
+            className="w-full bg-amber-400 hover:bg-amber-300 text-black font-black font-mono
+                       py-3 text-lg tracking-widest rounded transition-all
                        hover:shadow-[0_0_20px_#D4A620] active:scale-95"
           >
-            PRESS SPACE TO START
+            START GAME
           </button>
           <button
             onClick={onGodMode}
-            className="font-black font-mono px-10 py-3 text-xl tracking-widest rounded transition-all active:scale-95"
+            className="w-full font-black font-mono py-3 text-lg tracking-widest rounded transition-all active:scale-95"
             style={{
               background: 'linear-gradient(135deg, #FFD700, #FF8C00)',
               color: '#000',
@@ -210,9 +235,57 @@ function StartScreen({ highScore, onStart, onGodMode }: { highScore: number; onS
           >
             👑 GOD MODE
           </button>
-          <p className="text-gray-500 font-mono text-xs">
-            God Mode: invincible · all guns · auto-fire
-          </p>
+          <p className="text-gray-500 font-mono text-xs">God Mode: invincible · all guns · auto-fire</p>
+        </div>
+      </div>
+
+      {/* ── Right: level select ── */}
+      <div
+        className="w-64 flex flex-col py-6 pr-4 pl-2"
+        style={{ borderLeft: '1px solid rgba(100,200,255,0.12)' }}
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 className="text-cyan-400 font-black font-mono text-sm tracking-widest mb-3 px-2">
+          SELECT LEVEL
+        </h3>
+        <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+          {LEVEL_INFO.map((li) => {
+            const waves = LEVEL_WAVES[li.level - 1].length;
+            const isSelected = li.level === selectedLevel;
+            return (
+              <button
+                key={li.level}
+                onClick={() => onSelectLevel(li.level)}
+                className="w-full text-left px-3 py-2 rounded-lg transition-all active:scale-95 font-mono"
+                style={{
+                  background: isSelected ? `${li.color}18` : 'rgba(10,10,25,0.6)',
+                  border: `1px solid ${isSelected ? li.color : 'rgba(255,255,255,0.06)'}`,
+                  boxShadow: isSelected ? `0 0 10px ${li.color}44` : 'none',
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-xs font-black w-7 h-7 rounded flex items-center justify-center flex-shrink-0"
+                    style={{
+                      background: isSelected ? li.color : 'rgba(255,255,255,0.08)',
+                      color: isSelected ? '#000' : 'rgba(255,255,255,0.4)',
+                    }}
+                  >
+                    {li.level}
+                  </span>
+                  <div className="min-w-0">
+                    <div
+                      className="text-xs font-bold leading-none truncate"
+                      style={{ color: isSelected ? li.color : 'rgba(255,255,255,0.6)' }}
+                    >
+                      {li.icon} {li.env}
+                    </div>
+                    <div className="text-gray-600 text-xs mt-0.5">{waves} waves</div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -221,12 +294,13 @@ function StartScreen({ highScore, onStart, onGodMode }: { highScore: number; onS
 
 // ─── Pause screen ─────────────────────────────────────────────────────────────
 
-function PauseScreen({ onResume }: { onResume: () => void }) {
+function PauseScreen({ onResume, onExit }: { onResume: () => void; onExit: () => void }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
       <div
         className="text-center px-8 py-6 rounded-xl"
-        style={{ background: 'rgba(5,5,20,0.88)', border: '1px solid rgba(100,200,255,0.3)' }}
+        style={{ background: 'rgba(5,5,20,0.92)', border: '1px solid rgba(100,200,255,0.3)' }}
+        onClick={e => e.stopPropagation()}
       >
         <h2
           className="text-4xl font-black font-mono tracking-widest text-cyan-300 mb-4"
@@ -234,16 +308,24 @@ function PauseScreen({ onResume }: { onResume: () => void }) {
         >
           ⏸ PAUSED
         </h2>
-        <p className="text-gray-400 font-mono text-sm mb-5">
-          Press ESC or click to resume
-        </p>
-        <button
-          onClick={onResume}
-          className="bg-cyan-500 hover:bg-cyan-400 text-black font-black font-mono
-                     px-8 py-2 text-base tracking-widest rounded transition-all active:scale-95"
-        >
-          RESUME
-        </button>
+        <p className="text-gray-400 font-mono text-sm mb-5">Press ESC or click RESUME</p>
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={onResume}
+            className="bg-cyan-500 hover:bg-cyan-400 text-black font-black font-mono
+                       px-8 py-2 text-base tracking-widest rounded transition-all active:scale-95"
+          >
+            RESUME
+          </button>
+          <button
+            onClick={onExit}
+            className="bg-transparent hover:bg-red-900/30 text-red-500 hover:text-red-400 font-black font-mono
+                       px-8 py-2 text-sm tracking-widest rounded border border-red-800/50
+                       hover:border-red-600/60 transition-all active:scale-95"
+          >
+            EXIT TO MENU
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -376,6 +458,7 @@ export default function Game() {
   const [isNewHighScore, setIsNewHighScore] = useState(false);
   const [godMode, setGodMode] = useState(false);
   const [activeGuns, setActiveGuns] = useState<ActiveGuns>({ ...DEFAULT_GUNS });
+  const [selectedLevel, setSelectedLevel] = useState(1);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -419,13 +502,13 @@ export default function Game() {
   const handleStart = () => {
     setGodMode(false);
     setActiveGuns({ ...DEFAULT_GUNS });
-    engineRef.current?.startGame(performance.now(), false);
+    engineRef.current?.startGame(performance.now(), false, selectedLevel);
   };
 
   const handleGodMode = () => {
     setGodMode(true);
     setActiveGuns({ ...DEFAULT_GUNS });
-    engineRef.current?.startGame(performance.now(), true);
+    engineRef.current?.startGame(performance.now(), true, selectedLevel);
   };
 
   const handleToggleGun = (key: keyof ActiveGuns) => {
@@ -440,18 +523,20 @@ export default function Game() {
     engineRef.current?.resumeGame(performance.now());
   };
 
+  const handleExit = () => {
+    engineRef.current?.exitToMenu();
+  };
+
   const handleRestart = () => {
     setIsNewHighScore(false);
     setGodMode(false);
     setActiveGuns({ ...DEFAULT_GUNS });
-    engineRef.current?.startGame(performance.now(), false);
+    engineRef.current?.startGame(performance.now(), false, 1);
   };
 
   const handleContainerClick = () => {
     const p = phaseRef.current;
-    if (p === 'idle') handleStart();
-    else if (p === 'paused') handleResume();
-    else if (p === 'gameover') handleRestart();
+    if (p === 'gameover') handleRestart();
   };
 
   return (
@@ -477,11 +562,17 @@ export default function Game() {
       )}
 
       {phase === 'idle' && (
-        <StartScreen highScore={highScore} onStart={handleStart} onGodMode={handleGodMode} />
+        <StartScreen
+          highScore={highScore}
+          selectedLevel={selectedLevel}
+          onSelectLevel={setSelectedLevel}
+          onStart={handleStart}
+          onGodMode={handleGodMode}
+        />
       )}
 
       {phase === 'paused' && (
-        <PauseScreen onResume={handleResume} />
+        <PauseScreen onResume={handleResume} onExit={handleExit} />
       )}
 
       {phase === 'gameover' && (

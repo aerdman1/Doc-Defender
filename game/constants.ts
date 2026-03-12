@@ -2,6 +2,7 @@ export const PLAYER = {
   WIDTH: 48,
   HEIGHT: 48,
   SPEED: 300,
+  SPRINT_SPEED: 560,     // speed when holding Shift
   START_Y_OFFSET: 80,
   LIVES: 5,              // more lives for easier normal mode
   FIRE_RATE: 220,
