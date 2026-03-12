@@ -213,9 +213,9 @@ function StartScreen({
         <div className="flex flex-col gap-2 items-center w-full max-w-xs">
           <button
             onClick={onStart}
-            className="w-full bg-amber-400 hover:bg-amber-300 text-black font-black font-mono
+            className="w-full bg-emerald-400 hover:bg-emerald-300 text-black font-black font-mono
                        py-3 text-lg tracking-widest rounded transition-all
-                       hover:shadow-[0_0_20px_#D4A620] active:scale-95"
+                       hover:shadow-[0_0_20px_#34d399] active:scale-95"
           >
             START GAME
           </button>
