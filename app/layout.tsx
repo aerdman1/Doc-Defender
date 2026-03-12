@@ -9,7 +9,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Owl Defender",
+  title: "Docs Defender",
   description: "Protect the Docs. Destroy the Bugs.",
 };
 

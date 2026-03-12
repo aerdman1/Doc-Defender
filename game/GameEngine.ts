@@ -108,7 +108,7 @@ export class GameEngine {
     this.particles = new ParticleSystem();
 
     try {
-      const saved = localStorage.getItem('owlDefenderHighScore');
+      const saved = localStorage.getItem('docsDefenderHighScore');
       this.highScore = saved ? parseInt(saved, 10) : 0;
       callbacks.onHighScoreChange(this.highScore);
     } catch { /* localStorage not available */ }
@@ -406,7 +406,7 @@ export class GameEngine {
       this.highScore = this.score;
       this.callbacks.onHighScoreChange(this.highScore);
       this.callbacks.onNewHighScore();
-      try { localStorage.setItem('owlDefenderHighScore', String(this.highScore)); } catch { /* noop */ }
+      try { localStorage.setItem('docsDefenderHighScore', String(this.highScore)); } catch { /* noop */ }
     }
   }
 

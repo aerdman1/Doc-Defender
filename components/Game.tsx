@@ -182,7 +182,7 @@ function StartScreen({
           className="text-4xl font-black tracking-widest text-amber-400 font-mono mb-1"
           style={{ textShadow: '0 0 20px #D4A620, 0 0 40px #D4A62055' }}
         >
-          OWL DEFENDER
+          DOCS DEFENDER
         </h1>
         <p className="text-cyan-400 font-mono text-sm mb-1">Protect the Docs. Destroy the Bugs.</p>
         <p className="text-gray-500 font-mono text-xs mb-4">A ReadMe Arcade Experience</p>
