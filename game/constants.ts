@@ -140,7 +140,7 @@ export const POWERUP_COLORS: Record<string, string> = {
 
 // ─── Environments ────────────────────────────────────────────────────────────
 
-type EnvKey = 'space' | 'forest' | 'city' | 'ocean' | 'inferno';
+type EnvKey = 'space' | 'forest' | 'city' | 'ocean' | 'inferno' | 'chaos';
 
 export const ENVIRONMENTS: Record<EnvKey, {
   name: string;
@@ -154,6 +154,7 @@ export const ENVIRONMENTS: Record<EnvKey, {
   city:    { name: 'NEON CITY',      bgTop: '#040418', bgBottom: '#0C0C28', horizonColor: '#14143a', stars: false },
   ocean:   { name: 'DEEP OCEAN',     bgTop: '#010A18', bgBottom: '#041828', horizonColor: '#082035', stars: false },
   inferno: { name: 'INFERNO CORE',   bgTop: '#1A0200', bgBottom: '#380500', horizonColor: '#600a00', stars: false },
+  chaos:   { name: 'CHAOS DIMENSION', bgTop: '#0D0020', bgBottom: '#200010', horizonColor: '#330033', stars: false },
 };
 
 export function getEnvironment(level: number): EnvKey {
@@ -167,6 +168,17 @@ export function getEnvironment(level: number): EnvKey {
 // ─── Level Wave Definitions ──────────────────────────────────────────────────
 
 type WaveEntry = { type: string; count: number };
+
+// BONUS_WAVES — 3 escalating chaos waves after level 5
+export const BONUS_WAVES: WaveEntry[][] = [
+  // Wave 1: The Welcome Party
+  [{ type: 'bugSwarm', count: 10 }, { type: 'warningTriangle', count: 8 }, { type: 'meteor404', count: 6 }],
+  // Wave 2: The Heavy Hitters
+  [{ type: 'buildBot', count: 8 }, { type: 'glitchCube', count: 8 }, { type: 'undefinedBlob', count: 7 }],
+  // Wave 3: EVERYTHING AT ONCE
+  [{ type: 'meteor404', count: 7 }, { type: 'bugSwarm', count: 7 }, { type: 'warningTriangle', count: 6 },
+   { type: 'undefinedBlob', count: 6 }, { type: 'buildBot', count: 6 }, { type: 'glitchCube', count: 6 }],
+];
 
 // LEVEL_WAVES[level-1][waveIndex] = array of WaveEntry
 export const LEVEL_WAVES: WaveEntry[][][] = [

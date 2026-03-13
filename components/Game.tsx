@@ -25,7 +25,7 @@ const GUN_DEFS: { key: keyof ActiveGuns; label: string; icon: string; color: str
 ];
 
 function HUD({
-  score, highScore, lives, level, multiplier, activePowerUp, godMode, activeGuns, onToggleGun
+  score, highScore, lives, level, multiplier, activePowerUp, godMode, activeGuns, onToggleGun, bonusRound
 }: {
   score: number;
   highScore: number;
@@ -36,6 +36,7 @@ function HUD({
   godMode: boolean;
   activeGuns: ActiveGuns;
   onToggleGun: (key: keyof ActiveGuns) => void;
+  bonusRound: boolean;
 }) {
   return (
     <div className="absolute inset-0 pointer-events-none select-none p-3 font-mono">
@@ -81,6 +82,23 @@ function HUD({
             }}
           >
             👑 GOD MODE ACTIVE
+          </div>
+        </div>
+      )}
+
+      {/* Bonus round badge */}
+      {bonusRound && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2">
+          <div
+            className="font-black font-mono text-sm tracking-widest px-3 py-1 rounded-full animate-pulse"
+            style={{
+              background: 'linear-gradient(90deg, #FF00FF, #00FFFF, #FF00FF)',
+              backgroundSize: '200%',
+              color: '#000',
+              boxShadow: '0 0 16px #FF00FF, 0 0 32px #00FFFF',
+            }}
+          >
+            ⭐ BONUS ROUND · CHAOS DIMENSION ⭐
           </div>
         </div>
       )}
@@ -403,7 +421,7 @@ function VictoryScreen({
           VICTORY!
         </h1>
         <p className="text-cyan-400 font-mono text-lg mb-1">The docs are protected. 🦉</p>
-        <p className="text-gray-500 font-mono text-sm mb-6">All 5 levels complete!</p>
+        <p className="text-gray-500 font-mono text-sm mb-6">5 levels + the Chaos Dimension conquered!</p>
 
         {isNewHighScore && (
           <div
@@ -454,6 +472,7 @@ export default function Game() {
   const [godMode, setGodMode] = useState(false);
   const [activeGuns, setActiveGuns] = useState<ActiveGuns>({ ...DEFAULT_GUNS });
   const [selectedLevel, setSelectedLevel] = useState(1);
+  const [bonusRound, setBonusRound] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -484,6 +503,7 @@ export default function Game() {
         if (phaseRef.current === 'playing') setIsNewHighScore(true);
       },
       onGunsChange: (guns) => setActiveGuns({ ...guns }),
+      onBonusRound: () => setBonusRound(true),
     });
 
     engineRef.current = engine;
@@ -496,12 +516,14 @@ export default function Game() {
 
   const handleStart = () => {
     setGodMode(false);
+    setBonusRound(false);
     setActiveGuns({ ...DEFAULT_GUNS });
     engineRef.current?.startGame(performance.now(), false, selectedLevel);
   };
 
   const handleGodMode = () => {
     setGodMode(true);
+    setBonusRound(false);
     setActiveGuns({ ...DEFAULT_GUNS });
     engineRef.current?.startGame(performance.now(), true, selectedLevel);
   };
@@ -525,6 +547,7 @@ export default function Game() {
   const handleRestart = () => {
     setIsNewHighScore(false);
     setGodMode(false);
+    setBonusRound(false);
     setActiveGuns({ ...DEFAULT_GUNS });
     engineRef.current?.startGame(performance.now(), false, 1);
   };
@@ -553,6 +576,7 @@ export default function Game() {
           godMode={godMode}
           activeGuns={activeGuns}
           onToggleGun={handleToggleGun}
+          bonusRound={bonusRound}
         />
       )}
 

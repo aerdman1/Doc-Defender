@@ -1,7 +1,7 @@
 import { GamePhase, GameCallbacks, EnemyType, PowerUpType, ActiveGuns, DEFAULT_GUNS, EnvironmentId } from './types';
 import {
   PLAYER, DIFFICULTY, SCORE, BG, PARTICLES,
-  ENEMY_COLORS, POWERUP_COLORS, ENVIRONMENTS, LEVEL_WAVES, getEnvironment
+  ENEMY_COLORS, POWERUP_COLORS, ENVIRONMENTS, LEVEL_WAVES, BONUS_WAVES, getEnvironment
 } from './constants';
 import { InputManager } from './InputManager';
 import { Player } from './entities/Player';
@@ -80,6 +80,9 @@ export class GameEngine {
   private envId: EnvironmentId = 'space';
   private envParticles: EnvParticle[] = [];
   private envGeometry: { nodes: number[] } = { nodes: [] };
+
+  // Bonus round
+  private bonusRound = false;
 
   // Banner
   private bannerText = '';
@@ -455,13 +458,17 @@ export class GameEngine {
   }
 
   private onWaveComplete() {
-    const waves = LEVEL_WAVES[this.level - 1];
+    const waves = this.bonusRound ? BONUS_WAVES : LEVEL_WAVES[this.level - 1];
     if (this.waveIndex < waves.length - 1) {
-      // More waves in this level
+      // More waves in this level / bonus round
       this.waveIndex++;
       this.waveState = 'transitioning';
       this.waveTransitionTimer = DIFFICULTY.WAVE_CLEAR_DELAY;
       this.showBanner(`WAVE ${this.waveIndex + 1}`, `of ${waves.length}`);
+    } else if (this.bonusRound) {
+      // Bonus round complete → TRUE VICTORY
+      this.phase = 'victory';
+      this.callbacks.onPhaseChange('victory');
     } else if (this.level < DIFFICULTY.MAX_LEVEL) {
       // Next level
       this.level++;
@@ -469,23 +476,31 @@ export class GameEngine {
       this.waveIndex = 0;
       this.waveState = 'transitioning';
       this.waveTransitionTimer = DIFFICULTY.LEVEL_CLEAR_DELAY;
-      const envName = ENVIRONMENTS[getEnvironment(this.level)].name;
-      // Check if environment changed
       const newEnv = getEnvironment(this.level);
       if (newEnv !== this.envId) {
         this.envId = newEnv;
         this.initEnvParticles();
       }
-      this.showBanner(`LEVEL ${this.level}`, envName);
+      this.showBanner(`LEVEL ${this.level}`, ENVIRONMENTS[newEnv].name);
     } else {
-      // Victory!
-      this.phase = 'victory';
-      this.callbacks.onPhaseChange('victory');
+      // Level 5 done → BONUS ROUND!
+      this.bonusRound = true;
+      this.envId = 'chaos';
+      this.initEnvParticles();
+      this.waveIndex = 0;
+      this.waveState = 'transitioning';
+      this.waveTransitionTimer = DIFFICULTY.LEVEL_CLEAR_DELAY;
+      this.bannerText = '⭐ BONUS ROUND ⭐';
+      this.bannerSubtext = 'CHAOS DIMENSION';
+      this.bannerTimer = DIFFICULTY.LEVEL_CLEAR_DELAY;
+      this.flashTimer = 0.6;
+      this.flashColor = 'rgba(200,0,255,0.3)';
+      this.callbacks.onBonusRound?.();
     }
   }
 
   private beginWave() {
-    const waves = LEVEL_WAVES[this.level - 1];
+    const waves = this.bonusRound ? BONUS_WAVES : LEVEL_WAVES[this.level - 1];
     const wave = waves[this.waveIndex];
     // Flatten into queue and shuffle
     const flat: EnemyType[] = wave.flatMap(e => Array(e.count).fill(e.type)) as EnemyType[];
@@ -507,7 +522,7 @@ export class GameEngine {
   // ─── Environment ─────────────────────────────────────────────────────────────
 
   private initEnvParticles() {
-    const count = this.envId === 'space' ? 0 : this.envId === 'forest' ? 30 : this.envId === 'city' ? 50 : this.envId === 'ocean' ? 35 : 60;
+    const count = this.envId === 'space' ? 0 : this.envId === 'forest' ? 30 : this.envId === 'city' ? 50 : this.envId === 'ocean' ? 35 : this.envId === 'chaos' ? 80 : 60;
     const w = this.canvas.width || 800;
     const h = this.canvas.height || 600;
 
@@ -542,6 +557,16 @@ export class GameEngine {
         const startY = anywhere ? Math.random() * h : h + 10;
         return { x, y: startY, vx: -30 + Math.random() * 60, vy: -(60 + Math.random() * 120), size: 2 + Math.random() * 4, alpha: 0.5 + Math.random() * 0.5, life: Math.random(), color: Math.random() < 0.5 ? '#FF6600' : '#FF3300' };
       }
+      case 'chaos': {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = 40 + Math.random() * 100;
+        const hue = Math.floor(Math.random() * 360);
+        const cx = anywhere ? Math.random() * w : w / 2 + (Math.random() - 0.5) * 200;
+        const cy = anywhere ? Math.random() * h : h / 2 + (Math.random() - 0.5) * 200;
+        return { x: cx, y: cy, vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd,
+          size: 2 + Math.random() * 4, alpha: 0.7 + Math.random() * 0.3,
+          life: Math.random(), color: `hsl(${hue},100%,65%)` };
+      }
       default: return { x, y, vx: 0, vy: 0, size: 0, alpha: 0, life: 1, color: '#fff' };
     }
   }
@@ -554,9 +579,11 @@ export class GameEngine {
       p.y += p.vy * dt;
       p.life -= dt * (this.envId === 'city' ? 1.5 : 0.4);
 
-      const offscreen = this.envId === 'ocean' || this.envId === 'inferno'
-        ? p.y < -20                // rising particles go off top
-        : p.y > h + 20;            // falling particles go off bottom
+      const offscreen = this.envId === 'chaos'
+        ? p.y < -20 || p.y > h + 20  // chaos: any vertical edge (x handled below)
+        : this.envId === 'ocean' || this.envId === 'inferno'
+          ? p.y < -20
+          : p.y > h + 20;
 
       if (p.life <= 0 || offscreen || p.x < -30 || p.x > w + 30) {
         Object.assign(p, this.spawnEnvParticle(w, h, false));
@@ -770,6 +797,92 @@ export class GameEngine {
         ctx.shadowBlur = 0;
         ctx.restore();
       }
+
+    } else if (this.envId === 'chaos') {
+      // ── CHAOS DIMENSION ──────────────────────────────────────────────────
+
+      // Shifting rainbow gradient background
+      const hue = (now * 0.04) % 360;
+      const grad2 = ctx.createLinearGradient(0, 0, w, h);
+      grad2.addColorStop(0, `hsl(${hue},80%,5%)`);
+      grad2.addColorStop(0.5, `hsl(${(hue+130)%360},80%,4%)`);
+      grad2.addColorStop(1, `hsl(${(hue+260)%360},80%,5%)`);
+      ctx.fillStyle = grad2;
+      ctx.fillRect(-20, -20, w + 40, h + 40);
+
+      // Animated neon grid
+      const gridSize = 58;
+      const gridAlpha = 0.10 + Math.sin(now * 0.003) * 0.05;
+      ctx.lineWidth = 1;
+      for (let gx = 0; gx < w + gridSize; gx += gridSize) {
+        const lh = (hue + gx * 0.5) % 360;
+        ctx.strokeStyle = `hsla(${lh},100%,60%,${gridAlpha})`;
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, h); ctx.stroke();
+      }
+      for (let gy = 0; gy < h + gridSize; gy += gridSize) {
+        const lh = (hue + gy * 0.5 + 180) % 360;
+        ctx.strokeStyle = `hsla(${lh},100%,60%,${gridAlpha})`;
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(w, gy); ctx.stroke();
+      }
+
+      // Pulsing concentric rings expanding from center
+      const cx2 = w / 2, cy2 = h / 2;
+      for (let ring = 0; ring < 6; ring++) {
+        const r = ((now * 0.07 + ring * 70) % 420);
+        const ra = Math.max(0, 0.35 - r / 420 * 0.35);
+        const rh = (hue + ring * 55) % 360;
+        ctx.strokeStyle = `hsla(${rh},100%,70%,${ra})`;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(cx2, cy2, r, 0, Math.PI * 2); ctx.stroke();
+      }
+
+      // Diagonal rainbow streaks across screen
+      ctx.lineWidth = 1.5;
+      for (let s = 0; s < 5; s++) {
+        const offset = ((now * 60 + s * 200) % (w + h));
+        const sh = (hue + s * 72) % 360;
+        ctx.strokeStyle = `hsla(${sh},100%,65%,0.12)`;
+        ctx.beginPath();
+        ctx.moveTo(offset - h, 0);
+        ctx.lineTo(offset, h);
+        ctx.stroke();
+      }
+
+      // Floor checkerboard pattern (bottom third)
+      const tileSize = 40;
+      const floorY = h * 0.72;
+      for (let tx = 0; tx < w; tx += tileSize) {
+        for (let ty = floorY; ty < h; ty += tileSize) {
+          const idx = Math.floor(tx / tileSize) + Math.floor(ty / tileSize) + Math.floor(now / 400);
+          if (idx % 2 === 0) {
+            const th = (hue + tx * 0.3 + ty * 0.2) % 360;
+            ctx.fillStyle = `hsla(${th},80%,18%,0.5)`;
+            ctx.fillRect(tx, ty, tileSize, tileSize);
+          }
+        }
+      }
+
+      // Rainbow sparkle particles
+      for (const p of this.envParticles) {
+        ctx.save();
+        const life = Math.max(0, p.life);
+        ctx.globalAlpha = p.alpha * life;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 12;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * life, 0, Math.PI * 2); ctx.fill();
+        // Star cross
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = p.color;
+        ctx.beginPath();
+        ctx.moveTo(p.x - p.size * 2 * life, p.y);
+        ctx.lineTo(p.x + p.size * 2 * life, p.y);
+        ctx.moveTo(p.x, p.y - p.size * 2 * life);
+        ctx.lineTo(p.x, p.y + p.size * 2 * life);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+      }
     }
   }
 
@@ -808,7 +921,11 @@ export class GameEngine {
         ctx.fill();
       }
 
-      this.player.draw(ctx, now);
+      if (this.bonusRound) {
+        this.player.drawWalking(ctx, now);
+      } else {
+        this.player.draw(ctx, now);
+      }
 
       // Score popups
       for (const sp of this.scorePopups) {
@@ -833,22 +950,37 @@ export class GameEngine {
 
     // Wave/level banner
     if (this.bannerTimer > 0 && this.phase === 'playing') {
-      const alpha = Math.min(1, this.bannerTimer * 3) * Math.min(1, (this.bannerTimer / (this.envId === 'inferno' ? DIFFICULTY.LEVEL_CLEAR_DELAY : DIFFICULTY.WAVE_CLEAR_DELAY)) * 4);
+      const delayRef = (this.envId === 'inferno' || this.envId === 'chaos') ? DIFFICULTY.LEVEL_CLEAR_DELAY : DIFFICULTY.WAVE_CLEAR_DELAY;
+      const alpha = Math.min(1, this.bannerTimer * 3) * Math.min(1, (this.bannerTimer / delayRef) * 4);
       ctx.save();
       ctx.globalAlpha = Math.max(0, alpha);
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const cx = canvas.width / 2;
       const cy = canvas.height / 2 - 20;
-      ctx.font = 'bold 52px monospace';
-      ctx.shadowColor = '#00FFFF';
-      ctx.shadowBlur = 24;
-      ctx.fillStyle = '#00FFFF';
-      ctx.fillText(this.bannerText, cx, cy);
-      ctx.shadowBlur = 0;
-      ctx.font = 'bold 20px monospace';
-      ctx.fillStyle = '#AADDFF';
-      ctx.fillText(this.bannerSubtext, cx, cy + 44);
+      if (this.envId === 'chaos') {
+        // Rainbow cycling banner for bonus round
+        const bHue = (now * 0.12) % 360;
+        ctx.font = 'bold 54px monospace';
+        ctx.shadowColor = `hsl(${bHue},100%,70%)`;
+        ctx.shadowBlur = 32;
+        ctx.fillStyle = `hsl(${bHue},100%,72%)`;
+        ctx.fillText(this.bannerText, cx, cy);
+        ctx.shadowBlur = 0;
+        ctx.font = 'bold 22px monospace';
+        ctx.fillStyle = `hsl(${(bHue+120)%360},100%,75%)`;
+        ctx.fillText(this.bannerSubtext, cx, cy + 50);
+      } else {
+        ctx.font = 'bold 52px monospace';
+        ctx.shadowColor = '#00FFFF';
+        ctx.shadowBlur = 24;
+        ctx.fillStyle = '#00FFFF';
+        ctx.fillText(this.bannerText, cx, cy);
+        ctx.shadowBlur = 0;
+        ctx.font = 'bold 20px monospace';
+        ctx.fillStyle = '#AADDFF';
+        ctx.fillText(this.bannerSubtext, cx, cy + 44);
+      }
       ctx.restore();
     }
 
@@ -904,6 +1036,7 @@ export class GameEngine {
 
   startGame(now: number, godMode = false, startLevel = 1) {
     this.godMode = godMode;
+    this.bonusRound = false;
     this.activeGuns = { ...DEFAULT_GUNS };
     this.score = 0;
     this.level = startLevel;

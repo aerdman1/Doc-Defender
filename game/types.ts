@@ -1,6 +1,6 @@
 export type GamePhase = 'idle' | 'playing' | 'paused' | 'gameover' | 'victory';
 
-export type EnvironmentId = 'space' | 'forest' | 'city' | 'ocean' | 'inferno';
+export type EnvironmentId = 'space' | 'forest' | 'city' | 'ocean' | 'inferno' | 'chaos';
 
 export type EnemyType =
   | 'meteor404'
@@ -45,4 +45,5 @@ export interface GameCallbacks {
   onPowerUpChange: (type: PowerUpType | null, expiresAt: number) => void;
   onNewHighScore: () => void;
   onGunsChange?: (guns: ActiveGuns) => void;
+  onBonusRound?: () => void;
 }
