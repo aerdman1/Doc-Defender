@@ -880,7 +880,7 @@ export default function Game() {
     window.addEventListener('resize', resize);
 
     const engine = new GameEngine(canvas, {
-      onPhaseChange: (p) => {
+      onPhaseChange: (p: string) => {
         phaseRef.current = p;
         setPhase(p);
         if (p === 'gameover') setIsNewHighScore(false);
