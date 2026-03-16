@@ -1,4 +1,4 @@
-export type GamePhase = 'idle' | 'playing' | 'paused' | 'gameover' | 'victory';
+export type GamePhase = 'idle' | 'playing' | 'paused' | 'gameover' | 'victory' | 'sidescroller';
 
 export type EnvironmentId = 'space' | 'forest' | 'city' | 'ocean' | 'inferno' | 'chaos';
 
@@ -8,7 +8,17 @@ export type EnemyType =
   | 'warningTriangle'
   | 'undefinedBlob'
   | 'buildBot'
-  | 'glitchCube';
+  | 'glitchCube'
+  | 'formationBug'
+  | 'shooterBug'
+  | 'turretBug'
+  | 'shieldBot'
+  | 'kamikazeBug'
+  | 'bsodBug'
+  | 'loopZilla'
+  | 'syntaxTerror'
+  | 'nullPhantom'
+  | 'stackTitan';
 
 export type PowerUpType =
   | 'autoDocs'

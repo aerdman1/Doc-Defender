@@ -19,7 +19,8 @@ export class Projectile {
     angleRad = -Math.PI / 2,
     speed: number = PROJECTILE.SPEED,
     damage: number = PROJECTILE.DAMAGE,
-    style: ProjectileStyle = 'normal'
+    style: ProjectileStyle = 'normal',
+    widthMult = 1
   ) {
     this.x = x;
     this.y = y;
@@ -29,17 +30,9 @@ export class Projectile {
     this.style = style;
 
     if (style === 'plasma') {
-      this.width = 14;
-      this.height = 28;
-    } else if (style === 'spread' || style === 'side') {
-      this.width = 5;
-      this.height = 14;
-    } else if (style === 'rear') {
-      this.width = 5;
-      this.height = 14;
+      this.width = Math.round(12 * widthMult); this.height = 24;
     } else {
-      this.width = PROJECTILE.WIDTH;
-      this.height = PROJECTILE.HEIGHT;
+      this.width = Math.round(5 * widthMult); this.height = 13;
     }
   }
 
@@ -56,75 +49,99 @@ export class Projectile {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
-    const { x, y, width, height, style } = this;
-
-    // Rotate to travel direction
-    const angle = Math.atan2(this.vy, this.vx) + Math.PI / 2;
-
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(angle);
-
-    if (style === 'plasma') {
-      ctx.shadowColor = '#FF44FF';
-      ctx.shadowBlur = 18;
-      const g = ctx.createLinearGradient(0, height / 2, 0, -height / 2);
-      g.addColorStop(0, 'rgba(255, 50, 255, 0)');
-      g.addColorStop(0.4, '#FF44FF');
-      g.addColorStop(1, '#FFFFFF');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (style === 'side') {
-      ctx.shadowColor = '#00FFAA';
-      ctx.shadowBlur = 10;
-      const g = ctx.createLinearGradient(0, height / 2, 0, -height / 2);
-      g.addColorStop(0, 'rgba(0, 255, 170, 0)');
-      g.addColorStop(0.5, '#00FFAA');
-      g.addColorStop(1, '#FFFFFF');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (style === 'spread') {
-      ctx.shadowColor = '#FF8800';
-      ctx.shadowBlur = 8;
-      const g = ctx.createLinearGradient(0, height / 2, 0, -height / 2);
-      g.addColorStop(0, 'rgba(255, 136, 0, 0)');
-      g.addColorStop(0.5, '#FF8800');
-      g.addColorStop(1, '#FFEEAA');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (style === 'rear') {
-      ctx.shadowColor = '#FF3333';
-      ctx.shadowBlur = 8;
-      const g = ctx.createLinearGradient(0, height / 2, 0, -height / 2);
-      g.addColorStop(0, 'rgba(255, 50, 50, 0)');
-      g.addColorStop(0.5, '#FF3333');
-      g.addColorStop(1, '#FFAAAA');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // Normal gold shot
-      ctx.shadowColor = '#FFD700';
-      ctx.shadowBlur = 10;
-      const g = ctx.createLinearGradient(0, height / 2, 0, -height / 2);
-      g.addColorStop(0, 'rgba(255, 180, 0, 0)');
-      g.addColorStop(0.35, '#FFD700');
-      g.addColorStop(1, '#FFFFFF');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.ellipse(0, 0, width / 2, height / 2, 0, 0, Math.PI * 2);
-      ctx.fill();
+  // Static batch draw — call once with all projectiles to minimize ctx state changes
+  static drawBatch(ctx: CanvasRenderingContext2D, projectiles: Projectile[]) {
+    // Group by style for minimal state switching
+    const byStyle: Record<ProjectileStyle, Projectile[]> = {
+      normal: [], plasma: [], spread: [], side: [], rear: [],
+    };
+    for (const p of projectiles) {
+      if (p.active) byStyle[p.style].push(p);
     }
 
-    ctx.shadowBlur = 0;
-    ctx.restore();
+    // Normal — gold pill
+    if (byStyle.normal.length) {
+      ctx.fillStyle = '#FFD700';
+      for (const p of byStyle.normal) {
+        const angle = Math.atan2(p.vy, p.vx) + Math.PI / 2;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.width / 2, p.height / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Plasma — magenta fat bolt
+    if (byStyle.plasma.length) {
+      ctx.fillStyle = '#FF44FF';
+      for (const p of byStyle.plasma) {
+        const angle = Math.atan2(p.vy, p.vx) + Math.PI / 2;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.width / 2, p.height / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // Simple bright center
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.width / 4, p.height / 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Spread — orange
+    if (byStyle.spread.length) {
+      ctx.fillStyle = '#FF8800';
+      for (const p of byStyle.spread) {
+        const angle = Math.atan2(p.vy, p.vx) + Math.PI / 2;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.width / 2, p.height / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Side — teal
+    if (byStyle.side.length) {
+      ctx.fillStyle = '#00FFAA';
+      for (const p of byStyle.side) {
+        const angle = Math.atan2(p.vy, p.vx) + Math.PI / 2;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.width / 2, p.height / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    // Rear — red
+    if (byStyle.rear.length) {
+      ctx.fillStyle = '#FF3333';
+      for (const p of byStyle.rear) {
+        const angle = Math.atan2(p.vy, p.vx) + Math.PI / 2;
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.width / 2, p.height / 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  // Legacy single draw (kept for compatibility)
+  draw(ctx: CanvasRenderingContext2D) {
+    Projectile.drawBatch(ctx, [this]);
   }
 }

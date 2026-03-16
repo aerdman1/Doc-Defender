@@ -19,6 +19,12 @@ export class InputManager {
 
   private onUp(e: KeyboardEvent) {
     this.held.delete(e.key);
+    // When Shift is held, keyup reports the uppercase variant (e.g. 'A' instead of 'a').
+    // Clear both cases for single-char keys so movement never gets stuck.
+    if (e.key.length === 1) {
+      this.held.delete(e.key.toLowerCase());
+      this.held.delete(e.key.toUpperCase());
+    }
   }
 
   isDown(key: string): boolean {

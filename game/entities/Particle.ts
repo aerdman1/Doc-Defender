@@ -105,15 +105,28 @@ export class ParticleSystem {
   }
 
   draw(ctx: CanvasRenderingContext2D) {
-    for (const p of this.pool) {
-      if (!p.active) continue;
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, p.life);
-      ctx.fillStyle = p.color;
+    // Batch by color to reduce state changes
+    const active = this.pool.filter(p => p.active);
+    if (active.length === 0) return;
+
+    // Sort by color so we can batch fillStyle sets
+    active.sort((a, b) => (a.color > b.color ? 1 : -1));
+
+    let lastColor = '';
+    ctx.save();
+    for (const p of active) {
+      const life = Math.max(0, p.life);
+      const radius = Math.max(0.1, p.size * life);
+      ctx.globalAlpha = life;
+      if (p.color !== lastColor) {
+        ctx.fillStyle = p.color;
+        lastColor = p.color;
+      }
       ctx.beginPath();
-      ctx.arc(p.x, p.y, Math.max(0.1, p.size * p.life), 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
     }
+    ctx.globalAlpha = 1;
+    ctx.restore();
   }
 }

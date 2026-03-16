@@ -3,12 +3,23 @@ import { PowerUpType } from '../types';
 import { Projectile } from './Projectile';
 import { InputManager } from '../InputManager';
 
-// Preload Owlbert sprite once, shared across instances
-const owlbertImg = typeof window !== 'undefined' ? (() => {
-  const img = new Image();
-  img.src = '/owlbert.png';
-  return img;
-})() : null;
+// Cache of skin images keyed by src — loaded on demand, shared across instances
+const skinCache = new Map<string, HTMLImageElement>();
+
+function getSkinImg(src: string): HTMLImageElement | null {
+  if (typeof window === 'undefined') return null;
+  if (!skinCache.has(src)) {
+    const img = new Image();
+    img.src = src;
+    skinCache.set(src, img);
+  }
+  return skinCache.get(src)!;
+}
+
+/** Call early to start buffering a skin image before the game starts */
+export function preloadSkin(src: string) {
+  getSkinImg(src);
+}
 
 export class Player {
   x: number;
@@ -17,6 +28,8 @@ export class Player {
   readonly height = PLAYER.HEIGHT * 2;
   readonly speed = PLAYER.SPEED;
   lives: number = PLAYER.LIVES;
+  skinSrc: string = '/owlbert.png';
+  activeWeapons: Set<string> = new Set();
 
   invincibleUntil = 0;
   lastFired = 0;
@@ -57,15 +70,15 @@ export class Player {
     }
   }
 
-  tryShoot(now: number, godMode = false): Projectile | null {
+  tryShoot(now: number, godMode = false, normalFireRate?: number): boolean {
     const rate = godMode
       ? PLAYER.GOD_FIRE_RATE
       : this.activePowerUp === 'autoDocs'
         ? PLAYER.RAPID_FIRE_RATE
-        : PLAYER.FIRE_RATE;
-    if (now - this.lastFired < rate) return null;
+        : normalFireRate ?? PLAYER.FIRE_RATE;
+    if (now - this.lastFired < rate) return false;
     this.lastFired = now;
-    return new Projectile(this.x, this.y - this.height / 2 + 2);
+    return true;
   }
 
   activatePowerUp(type: PowerUpType, now: number) {
@@ -284,10 +297,11 @@ export class Player {
     ctx.fill();
 
     // Draw Owlbert sprite (centered on x, y)
-    if (owlbertImg && owlbertImg.complete && owlbertImg.naturalWidth > 0) {
+    const skinImg = getSkinImg(this.skinSrc);
+    if (skinImg && skinImg.complete && skinImg.naturalWidth > 0) {
       // Gentle hover bob
       const bob = Math.sin(now * 0.003) * 3;
-      ctx.drawImage(owlbertImg, x - W / 2, y - H / 2 + bob, W, H);
+      ctx.drawImage(skinImg, x - W / 2, y - H / 2 + bob, W, H);
     } else {
       // Fallback circle if image hasn't loaded yet
       ctx.fillStyle = '#8B5E3C';
@@ -295,6 +309,9 @@ export class Player {
       ctx.arc(x, y, W / 2, 0, Math.PI * 2);
       ctx.fill();
     }
+
+    // Weapon attachment modules (drawn over sprite so they look bolted on)
+    this.drawWeaponModules(ctx, now);
 
     // Shield ring
     if (this.hasShield) {
@@ -311,5 +328,105 @@ export class Player {
 
     ctx.globalAlpha = 1;
     ctx.restore();
+  }
+
+  private drawWeaponModules(ctx: CanvasRenderingContext2D, now: number) {
+    const { x, y } = this;
+    const aw = this.activeWeapons;
+
+    // ── Spread gun — two small orange angled barrels at front-left/right ────
+    if (aw.has('spread')) {
+      const pulse = 0.7 + Math.sin(now * 0.009) * 0.3;
+      ctx.save();
+      ctx.shadowColor = '#FF8800';
+      ctx.shadowBlur = 8 * pulse;
+      ctx.fillStyle = '#995500';
+      // Left barrel
+      ctx.save();
+      ctx.translate(x - 22, y - 30);
+      ctx.rotate(-0.32);
+      ctx.fillRect(-3, -10, 6, 18);
+      ctx.restore();
+      // Right barrel
+      ctx.save();
+      ctx.translate(x + 22, y - 30);
+      ctx.rotate(0.32);
+      ctx.fillRect(-3, -10, 6, 18);
+      ctx.restore();
+      // Muzzle glows
+      ctx.fillStyle = `rgba(255, 140, 0, ${0.85 * pulse})`;
+      ctx.beginPath(); ctx.arc(x - 22 + Math.sin(-0.32) * 10, y - 30 - Math.cos(0.32) * 10, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(x + 22 + Math.sin(0.32)  * 10, y - 30 - Math.cos(0.32) * 10, 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // ── Side cannons — teal gun pods on the wing tips ────────────────────────
+    if (aw.has('side')) {
+      const pulse = 0.6 + Math.sin(now * 0.007 + 1) * 0.4;
+      ctx.save();
+      ctx.shadowColor = '#00FFAA';
+      ctx.shadowBlur = 10 * pulse;
+      for (const side of [-1, 1]) {
+        const px = x + side * 52;
+        const py = y - 6;
+        // Pod body
+        ctx.fillStyle = '#007755';
+        ctx.beginPath(); ctx.ellipse(px, py, 14, 6, 0, 0, Math.PI * 2); ctx.fill();
+        // Pod detail stripe
+        ctx.fillStyle = '#004433';
+        ctx.beginPath(); ctx.ellipse(px, py, 8, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+        // Barrel extending outward
+        ctx.fillStyle = '#00AA77';
+        ctx.fillRect(px + side * 12, py - 3, side * 8, 6);
+        // Muzzle glow
+        ctx.fillStyle = `rgba(0, 255, 170, ${0.75 * pulse})`;
+        ctx.beginPath(); ctx.arc(px + side * 21, py, 4.5 * pulse, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // ── Plasma cannon — magenta charged emitter at the ship nose ─────────────
+    if (aw.has('plasma')) {
+      const pulse = 0.6 + Math.sin(now * 0.011) * 0.4;
+      const ny = y - 44;
+      ctx.save();
+      ctx.shadowColor = '#FF44FF';
+      ctx.shadowBlur = 20 * pulse;
+      // Mounting ring
+      ctx.strokeStyle = '#AA00AA';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, ny, 8, 0, Math.PI * 2); ctx.stroke();
+      // Glowing core
+      const g = ctx.createRadialGradient(x, ny, 0, x, ny, 9);
+      g.addColorStop(0,   `rgba(255, 220, 255, ${pulse})`);
+      g.addColorStop(0.5, `rgba(255,  50, 255, ${0.9 * pulse})`);
+      g.addColorStop(1,   `rgba(160,   0, 160, 0)`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, ny, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // ── Rear launcher — red barrel below ship ────────────────────────────────
+    if (aw.has('rear')) {
+      const pulse = 0.5 + Math.sin(now * 0.013 + 2) * 0.5;
+      const ry = y + 42;
+      ctx.save();
+      ctx.shadowColor = '#FF3333';
+      ctx.shadowBlur = 10 * pulse;
+      // Barrel housing
+      ctx.fillStyle = '#771111';
+      ctx.fillRect(x - 6, ry, 12, 14);
+      // Top flange
+      ctx.fillStyle = '#993333';
+      ctx.fillRect(x - 8, ry, 16, 5);
+      // Muzzle glow
+      ctx.fillStyle = `rgba(255, 60, 60, ${0.85 * pulse})`;
+      ctx.beginPath(); ctx.arc(x, ry + 15, 5 * pulse, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
   }
 }

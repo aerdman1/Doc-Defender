@@ -32,27 +32,63 @@ export class PowerUp {
   draw(ctx: CanvasRenderingContext2D) {
     const { x, y } = this;
     const r = this.width / 2;
-    const pulse = 0.82 + Math.sin(this.bobTime) * 0.18;
-    const bobY = y + Math.sin(this.bobTime * 0.6) * 3;
+    const pulse = 0.88 + Math.sin(this.bobTime) * 0.12;
+    const bobY = y + Math.sin(this.bobTime * 0.55) * 5;
+    const spinAngle = this.bobTime * 1.4;
 
     ctx.save();
-    ctx.shadowColor = this.color;
-    ctx.shadowBlur = 22 * pulse;
 
-    ctx.fillStyle = 'rgba(5, 5, 20, 0.8)';
+    // Outer rotating ring of dashes
+    ctx.save();
+    ctx.translate(x, bobY);
+    ctx.rotate(spinAngle);
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 0.55;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 10, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // Counter-rotating inner ring
+    ctx.save();
+    ctx.translate(x, bobY);
+    ctx.rotate(-spinAngle * 0.6);
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.35;
+    ctx.setLineDash([5, 9]);
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    // Glow halo
+    ctx.shadowColor = this.color;
+    ctx.shadowBlur = 32 * pulse;
+
+    // Dark filled circle
+    ctx.fillStyle = 'rgba(5, 5, 20, 0.88)';
     ctx.beginPath();
     ctx.arc(x, bobY, r * pulse, 0, Math.PI * 2);
     ctx.fill();
 
+    // Colored border
     ctx.strokeStyle = this.color;
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(x, bobY, r * pulse, 0, Math.PI * 2);
     ctx.stroke();
 
     ctx.shadowBlur = 0;
 
-    ctx.font = `${Math.floor(r * 1.15)}px sans-serif`;
+    // Icon (larger)
+    ctx.font = `${Math.floor(r * 1.1)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(this.icon, x, bobY + 1);
