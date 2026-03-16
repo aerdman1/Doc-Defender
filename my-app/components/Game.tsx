@@ -880,7 +880,7 @@ export default function Game() {
     window.addEventListener('resize', resize);
 
     const engine = new GameEngine(canvas, {
-      onPhaseChange: (p: string) => {
+      onPhaseChange: (p: GamePhase) => {
         phaseRef.current = p;
         setPhase(p);
         if (p === 'gameover') setIsNewHighScore(false);
@@ -891,11 +891,11 @@ export default function Game() {
       onLivesChange: setLives,
       onLevelChange: setLevel,
       onMultiplierChange: setMultiplier,
-      onPowerUpChange: (type) => setActivePowerUp(type),
+      onPowerUpChange: (type: PowerUpType | null) => setActivePowerUp(type),
       onNewHighScore: () => {
         if (phaseRef.current === 'playing') setIsNewHighScore(true);
       },
-      onGunsChange: (guns) => setActiveGuns({ ...guns }),
+      onGunsChange: (guns: ActiveGuns) => setActiveGuns({ ...guns }),
       onBonusRound: () => setBonusRound(true),
     });
 
@@ -918,13 +918,13 @@ export default function Game() {
     setActiveGuns({ ...DEFAULT_GUNS });
     if (selectedLevel === 7) {
       setBonusRound(false);
-      engineRef.current?.startBossGame(performance.now(), false);
+      engineRef.current?.startBossGame(performance.now());
     } else if (selectedLevel === 6) {
       setBonusRound(true);
-      engineRef.current?.startBonusGame(performance.now(), false);
+      engineRef.current?.startBonusGame(performance.now());
     } else {
       setBonusRound(false);
-      engineRef.current?.startGame(performance.now(), false, selectedLevel);
+      engineRef.current?.startGame(performance.now());
     }
   };
 

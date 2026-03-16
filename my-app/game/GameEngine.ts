@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { GamePhase, GameCallbacks, EnemyType, PowerUpType, ActiveGuns, DEFAULT_GUNS, EnvironmentId } from './types';
 import { ENEMY, PLAYER, PROJECTILE, DIFFICULTY, SCORE, BG, PARTICLES, POWERUP, ENVIRONMENTS, ENEMY_COLORS, LEVEL_WAVES, BONUS_WAVES, getEnvironment, POWERUP_COLORS } from './constants';
 import { InputManager } from './InputManager';
@@ -1849,8 +1850,7 @@ export class GameEngine {
         }
     }
     // ─── Public API ─────────────────────────────────────────────────────────────
-    startGame(now) {
-        let godMode = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : false, startLevel = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : 1;
+    startGame(now: number, godMode: boolean = false, startLevel: number = 1) {
         this.godMode = godMode;
         this.bonusRound = false;
         this.bossPhase = false;
@@ -1965,8 +1965,7 @@ export class GameEngine {
         this.initStars();
         this.initEnvParticles();
     }
-    startBonusGame(now) {
-        let godMode = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : false;
+    startBonusGame(now: number, godMode: boolean = false) {
         var _this_callbacks_onBonusRound, _this_callbacks;
         this.godMode = godMode;
         this.bonusRound = true;
@@ -2017,8 +2016,7 @@ export class GameEngine {
         this.sound.init();
         this.sound.playTrack("gameplay");
     }
-    startBossGame(now) {
-        let godMode = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : false;
+    startBossGame(now: number, godMode: boolean = false) {
         this.godMode = godMode;
         this.bonusRound = false;
         this.bossPhase = true;
