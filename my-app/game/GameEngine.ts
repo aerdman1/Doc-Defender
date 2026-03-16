@@ -2,7 +2,7 @@
 import { GamePhase, GameCallbacks, EnemyType, PowerUpType, ActiveGuns, DEFAULT_GUNS, EnvironmentId } from './types';
 import { ENEMY, PLAYER, PROJECTILE, DIFFICULTY, SCORE, BG, PARTICLES, POWERUP, ENVIRONMENTS, ENEMY_COLORS, LEVEL_WAVES, BONUS_WAVES, getEnvironment, POWERUP_COLORS } from './constants';
 import { InputManager } from './InputManager';
-import { Player } from './entities/Player';
+import { Player, preloadSkin } from './entities/Player';
 import { Projectile } from './entities/Projectile';
 import { Enemy, EnemyBullet, createEnemy, FormationBug, ShooterBug, TurretBug, BossEnemy, MiniBossEnemy, isMiniBosstType } from './entities/Enemy';
 import { PowerUp, createPowerUp } from './entities/PowerUp';
@@ -2109,7 +2109,7 @@ export class GameEngine {
     }
     setSkin(src) {
         this.skinSrc = src;
-        (0,_entities_Player__WEBPACK_IMPORTED_MODULE_3__.preloadSkin)(src);
+        preloadSkin(src);
         // Apply immediately if a game is already running
         if (this.player) this.player.skinSrc = src;
     }
