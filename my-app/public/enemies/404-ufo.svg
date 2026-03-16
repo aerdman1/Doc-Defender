@@ -1,0 +1,17 @@
+<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <ellipse cx="64" cy="82" rx="42" ry="14" fill="#6C63FF"></ellipse>
+    <ellipse cx="64" cy="64" rx="28" ry="20" fill="#A29BFE"></ellipse>
+    <rect x="24" y="78" width="80" height="12" rx="6" fill="#2D3436"></rect>
+    <circle cx="44" cy="84" r="4" fill="#FF7675"></circle>
+    <circle cx="64" cy="84" r="4" fill="#FDCB6E"></circle>
+    <circle cx="84" cy="84" r="4" fill="#55EFC4"></circle>
+    <text x="64" y="68" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#2D3436">404</text>
+    <line x1="36" y1="94" x2="28" y2="108" stroke="#00CEC9" stroke-width="4" stroke-linecap="round"></line>
+    <line x1="52" y1="94" x2="46" y2="110" stroke="#00CEC9" stroke-width="4" stroke-linecap="round"></line>
+    <line x1="76" y1="94" x2="82" y2="110" stroke="#00CEC9" stroke-width="4" stroke-linecap="round"></line>
+    <line x1="92" y1="94" x2="100" y2="108" stroke="#00CEC9" stroke-width="4" stroke-linecap="round"></line>
+    <circle cx="52" cy="62" r="3" fill="#111"></circle>
+    <circle cx="76" cy="62" r="3" fill="#111"></circle>
+  </g>
+</svg>
